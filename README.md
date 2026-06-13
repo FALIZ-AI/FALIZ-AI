@@ -1,4 +1,4 @@
-# ========================================================================================
+========================================================================================
 ███████╗ █████╗ ██╗     ██╗███████╗     █████╗ ██╗
 ██╔════╝██╔══██╗██║     ██║╚══███╔╝    ██╔══██╗██║
 █████╗  ███████║██║     ██║  ███╔╝     ███████║██║
@@ -32,6 +32,24 @@
 **Codename:** ORACLE  
 **Status:** Production-Ready
 
+## Table of Contents
+
+- [What is FALIZ?](#what-is-faliz)
+- [Architecture at a Glance](#architecture-at-a-glance)
+- [Quick Start](#quick-start)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Plugin Modules](#plugin-modules-16-total)
+- [API Endpoints](#api-endpoints)
+- [Configuration](#configuration)
+- [Design System](#design-system)
+- [Security](#security)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [Support](#support)
+
 ## What is FALIZ?
 
 FALIZ is an ultra-intelligent personal AI operating system for desktop. It combines:
@@ -59,14 +77,14 @@ FALIZ is an ultra-intelligent personal AI operating system for desktop. It combi
 ├─────────────────────────────────────────────────────────────┤
 │              Voice Input / Text Input Bar                     │
 └─────────────────────────────────────────────────────────────┘
-            ↕ WebSocket + REST + SSE
+             ↕ WebSocket + REST + SSE
 ┌─────────────────────────────────────────────────────────────┐
 │              FastAPI Backend (Python 3.12)                  │
 ├──────────┬──────────┬──────────┬──────────┬────────────────┤
 │ AI Brain │ Voice    │ Calendar │ Tasks    │ 12+ Plugins    │
 │ (Brain)  │ (Voice)  │ (Events) │ (Org)    │ (Integrated)   │
 └──────────┴──────────┴──────────┴──────────┴────────────────┘
-       ↕ Async ORM ↕ Vector Store ↕ Pub/Sub
+        ↕ Async ORM ↕ Vector Store ↕ Pub/Sub
 ┌────────────────┬────────────────┬────────────────┐
 │  PostgreSQL    │     Redis      │    ChromaDB    │
 │  (Primary DB)  │  (Cache/Queue) │  (Embeddings)  │
