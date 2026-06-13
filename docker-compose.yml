@@ -1,0 +1,119 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: faliz-postgres
+    environment:
+      POSTGRES_USER: faliz
+      POSTGRES_PASSWORD: faliz_secure_password
+      POSTGRES_DB: faliz
+      POSTGRES_INITDB_ARGS: '-c max_connections=200'
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U faliz']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faliz-network
+
+  # Redis Cache & Pub/Sub
+  redis:
+    image: redis:7.2-alpine
+    container_name: faliz-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faliz-network
+
+  # ChromaDB Vector Store
+  chromadb:
+    image: ghcr.io/chroma-core/chroma:latest
+    container_name: faliz-chromadb
+    ports:
+      - '8001:8000'
+    environment:
+      IS_PERSISTENT: 'true'
+    volumes:
+      - chromadb_data:/chroma/chroma_data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/v1/heartbeat']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faliz-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: faliz-backend
+    ports:
+      - '8000:8000'
+    environment:
+      DATABASE_URL: postgresql+asyncpg://faliz:faliz_secure_password@postgres:5432/faliz
+      REDIS_URL: redis://redis:6379/0
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: '8000'
+      APP_ENV: production
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend:/app
+    command: |
+      sh -c '
+      alembic upgrade head &&
+      uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      '
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - faliz-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: faliz-nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    networks:
+      - faliz-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  chromadb_data:
+
+networks:
+  faliz-network:
+    driver: bridge
